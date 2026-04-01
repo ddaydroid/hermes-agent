@@ -1,4 +1,5 @@
-from fastapi import APIRouter, HTTPException
+import logging
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from services.gateway_proxy import get_live_agents, GatewayUnavailable
@@ -7,7 +8,7 @@ router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
 
 @router.get("/live")
-def live_agents():
+def live_agents(request: Request):
     """
     Fetch running agents from the gateway admin endpoint.
     
@@ -18,11 +19,12 @@ def live_agents():
         data = get_live_agents()
         return JSONResponse(data)
     except GatewayUnavailable as e:
+        logger.error("Gateway unavailable — endpoint=%s error=%s", request.url.path, e)
         raise HTTPException(status_code=503, detail=str(e))
 
 
 @router.get("/status")
-def agents_status():
+def agents_status(request: Request):
     """
     Simple gateway status check (does NOT raise on gateway down).
     

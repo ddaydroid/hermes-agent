@@ -26,6 +26,8 @@ async def lifespan(app: FastAPI):
         f"gateway_admin={cfg.gateway_admin_url()}"
     )
     yield
+    from services.sqlite_reader import close_connection
+    close_connection()
     logger.info("Hermes Dashboard shutting down")
 
 
@@ -37,15 +39,8 @@ app = FastAPI(
 
 app.include_router(files.router)
 
-# CORS — same-origin in v1, disabled for simplicity
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
+cfg = get_config()
+app.add_middleware(CORSMiddleware, allow_origins=cfg.frontend_origins, allow_credentials=False, allow_methods=["GET"], allow_headers=["*"])
 
 app.include_router(sessions.router)
 app.include_router(agents.router)

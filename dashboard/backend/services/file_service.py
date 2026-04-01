@@ -43,6 +43,19 @@ LANG_MAP = {
 }
 
 
+def _assert_within_root(path: Path) -> None:
+    """Verify resolved path is within allowed file roots. Raises PermissionError if not."""
+    cfg = get_config()
+    resolved = path.resolve()
+    for root in cfg.allowed_file_roots():
+        try:
+            resolved.relative_to(root.resolve())
+            return
+        except ValueError:
+            continue
+    raise PermissionError(f"Path {resolved} is outside allowed roots")
+
+
 def _error(error_code: str, message: str) -> dict:
     """Create an error response dict."""
     return {"error": error_code, "message": message}
@@ -72,6 +85,10 @@ def list_directory(path: str | Path) -> dict:
         - "permission_denied" if cannot read directory
     """
     path = Path(path)
+    try:
+        _assert_within_root(path)
+    except PermissionError as e:
+        return _error("permission_denied", str(e))
 
     # Check if path exists
     if not path.exists():
@@ -167,6 +184,10 @@ def read_file(path: str | Path) -> dict:
         - "binary_file" if file appears to be binary
     """
     path = Path(path)
+    try:
+        _assert_within_root(path)
+    except PermissionError as e:
+        return _error("permission_denied", str(e))
     config = get_config()
 
     # Check if path exists

@@ -1,9 +1,12 @@
 """Git service for workspace context."""
+import logging
 import subprocess
 from pathlib import Path
 from typing import Any
 
 from config import get_config
+
+logger = logging.getLogger(__name__)
 
 
 def get_git_info(workspace_path: str | Path | None = None) -> dict[str, Any]:
@@ -99,6 +102,7 @@ def get_git_info(workspace_path: str | Path | None = None) -> dict[str, Any]:
 
     except Exception:
         # Never raise exceptions — always return a dict
+        logger.warning("git_service: unexpected error for workspace_path=%s", workspace_path, exc_info=True)
         return {
             "workspace_path": str(workspace_path) if workspace_path else str(get_config().workspace_default),
             "is_repo": False,

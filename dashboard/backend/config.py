@@ -40,6 +40,7 @@ class Config:
             "dir_cache_ttl": DEFAULT_DIR_CACHE_TTL,
             "dir_cache_max_entries": DEFAULT_DIR_CACHE_MAX_ENTRIES,
             "file_read_max_bytes": DEFAULT_FILE_READ_MAX_BYTES,
+            "frontend_origins": ["http://localhost:5173"],
         }
 
         data = dict(defaults)
@@ -56,6 +57,10 @@ class Config:
         self.dir_cache_ttl = int(data["dir_cache_ttl"])
         self.dir_cache_max_entries = int(data["dir_cache_max_entries"])
         self.file_read_max_bytes = int(data["file_read_max_bytes"])
+        self.frontend_origins = data.get("frontend_origins", ["http://localhost:5173"])
+
+    def allowed_file_roots(self) -> list[Path]:
+        return [self.hermes_home, self.workspace_default]
 
     def gateway_admin_url(self) -> str:
         return f"http://localhost:{self.gateway_admin_port}"

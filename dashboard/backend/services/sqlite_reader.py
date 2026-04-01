@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import sqlite3
 import time
 from datetime import datetime, timezone
@@ -17,6 +18,14 @@ DB_PATH = os.path.expanduser("~/.hermes/state.db")
 
 # Module-level connection — opened once at import time
 _conn: sqlite3.Connection | None = None
+
+
+def close_connection() -> None:
+    """Close the module-level SQLite connection."""
+    global _conn
+    if _conn is not None:
+        _conn.close()
+        _conn = None
 
 
 class DBDatabaseBusy(Exception):
@@ -73,7 +82,7 @@ def _query(
         except sqlite3.OperationalError as exc:
             if retry_on_busy and "database is locked" in str(exc):
                 if attempt < 2:
-                    time.sleep(0.5)
+                    time.sleep(0.5 + random.uniform(0, 0.25))
                     continue
             raise DBDatabaseBusy(str(exc)) from exc
 

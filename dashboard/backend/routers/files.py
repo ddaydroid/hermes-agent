@@ -1,6 +1,7 @@
+import logging
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.responses import JSONResponse
 
 from services.file_service import list_directory, read_file
@@ -10,7 +11,7 @@ router = APIRouter(prefix="/api/v1/files", tags=["files"])
 
 
 @router.get("/tree")
-def file_tree(path: str = Query(default=str(Path.home()), description="Absolute directory path")):
+def file_tree(request: Request, path: str = Query(default=str(Path.home()), description="Absolute directory path")):
     """
     List directory contents.
 
@@ -29,7 +30,7 @@ def file_tree(path: str = Query(default=str(Path.home()), description="Absolute 
 
 
 @router.get("/read")
-def file_read(path: str = Query(description="Absolute file path")):
+def file_read(request: Request, path: str = Query(description="Absolute file path")):
     """
     Read file contents.
 
@@ -51,7 +52,7 @@ def file_read(path: str = Query(description="Absolute file path")):
 
 
 @router.get("/git")
-def file_git(workspace: str | None = Query(default=None, description="Absolute path to git repo")):
+def file_git(request: Request, workspace: str | None = Query(default=None, description="Absolute path to git repo")):
     """
     Get git info for a workspace.
 
