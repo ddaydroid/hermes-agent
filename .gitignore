@@ -58,3 +58,9 @@ mini-swe-agent/
 # Nix
 .direnv/
 result
+
+# Nested Python artifacts
+**/venv/
+**/.venv/
+**/__pycache__/
+**/*.pyc

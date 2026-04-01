@@ -1,0 +1,7 @@
+hermes_home: ~/.hermes
+workspace_default: ~/.hermes/hermes-agent
+gateway_admin_port: 8644
+dashboard_port: 8643
+dir_cache_ttl_seconds: 30
+dir_cache_max_entries: 200
+file_read_max_bytes: 524288
