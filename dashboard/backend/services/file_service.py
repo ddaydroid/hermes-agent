@@ -55,8 +55,13 @@ def _error(error_code: str, message: str) -> dict:
     return {"error": error_code, "message": message}
 
 
-def list_directory(path: str | Path) -> dict:
-    """List contents of a directory.
+def list_directory(path: str | Path, recursive: bool = False, max_depth: int = 10) -> dict:
+    """List contents of a directory, optionally recursively.
+
+    Args:
+        path: Directory path to list.
+        recursive: If True, fetch all subdirectories up to max_depth.
+        max_depth: Maximum recursion depth when recursive=True.
 
     Returns:
         {
@@ -92,43 +97,70 @@ def list_directory(path: str | Path) -> dict:
     if not path.is_dir():
         return _error("not_a_directory", f"Path is not a directory: {path}")
 
-    # Try to list directory
+    def _collect(parent: Path, depth: int) -> list[dict]:
+        """Recursively collect directory entries."""
+        results: list[dict] = []
+        if depth > max_depth:
+            return results
+        try:
+            with os.scandir(parent) as scan:
+                for entry in scan:
+                    entry_type: Literal["file", "dir", "symlink"]
+                    symlink_target = None
+
+                    if entry.is_symlink():
+                        entry_type = "symlink"
+                        try:
+                            symlink_target = os.readlink(entry.path)
+                        except OSError:
+                            pass
+                    elif entry.is_dir():
+                        entry_type = "dir"
+                    else:
+                        entry_type = "file"
+
+                    size: int | None = None
+                    modified: float | None = None
+                    if entry_type == "file":
+                        try:
+                            stat = entry.stat()
+                            size = stat.st_size
+                            modified = stat.st_mtime
+                        except OSError:
+                            pass
+
+                    results.append({
+                        "name": entry.name,
+                        "path": entry.path,
+                        "type": entry_type,
+                        "size": size,
+                        "modified": modified,
+                        "symlink_target": symlink_target,
+                    })
+
+                    if recursive and entry_type == "dir":
+                        try:
+                            child_path = Path(entry.path)
+                            # Only recurse if resolved path is still within allowed scope
+                            # This prevents symlink escapes outside allowed_file_paths
+                            try:
+                                child_resolved = child_path.resolve()
+                                cfg = get_config()
+                                if not cfg.is_path_allowed(child_resolved):
+                                    # Symlink points outside allowed paths — skip
+                                    pass
+                                else:
+                                    results.extend(_collect(child_path, depth + 1))
+                            except (PermissionError, ValueError):
+                                pass
+                        except PermissionError:
+                            pass
+        except PermissionError:
+            pass
+        return results
+
     try:
-        entries = []
-        with os.scandir(path) as scan:
-            for entry in scan:
-                entry_type: Literal["file", "dir", "symlink"]
-                symlink_target = None
-
-                if entry.is_symlink():
-                    entry_type = "symlink"
-                    symlink_target = os.readlink(entry.path)
-                elif entry.is_dir():
-                    entry_type = "dir"
-                else:
-                    entry_type = "file"
-
-                # Get size and modified time only for files
-                size: int | None = None
-                modified: float | None = None
-                if entry_type == "file":
-                    try:
-                        stat = entry.stat()
-                        size = stat.st_size
-                        modified = stat.st_mtime
-                    except OSError:
-                        pass
-
-                entries.append({
-                    "name": entry.name,
-                    "path": entry.path,
-                    "type": entry_type,
-                    "size": size,
-                    "modified": modified,
-                    "symlink_target": symlink_target,
-                })
-    except PermissionError:
-        return _error("permission_denied", f"Permission denied: {path}")
+        entries = _collect(path, 0)
     except OSError as e:
         return _error("permission_denied", f"Cannot read directory {path}: {e}")
 

@@ -63,7 +63,10 @@ export async function getSessionStats() {
 }
 
 // Files
-export async function getFileTree(path: string) {
+export async function getFileTree(path: string, recursive = false, childrenOf?: string) {
+  const params: Record<string, string | number | undefined> = { path, recursive: recursive ? 1 : 0 };
+  if (childrenOf) params["children_of"] = childrenOf;
+  return baseFetch<{ path: string; entries: FileEntry[]; error: string | null }>("/files/tree", params);
   return baseFetch<{ path: string; entries: FileEntry[] }>("/files/tree", { path });
 }
 

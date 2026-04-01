@@ -40,10 +40,10 @@ export function useSessionStats() {
   });
 }
 
-export function useFileTree(path: string) {
+export function useFileTree(path: string, childrenOf?: string) {
   return useQuery({
-    queryKey: ["files", "tree", path],
-    queryFn: () => getFileTree(path),
+    queryKey: ["files", "tree", path, childrenOf],
+    queryFn: () => getFileTree(path, false, childrenOf),
     refetchInterval: POLL_INTERVAL,
     staleTime: STALE_TIME,
     enabled: path.length > 0,

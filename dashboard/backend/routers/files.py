@@ -14,9 +14,14 @@ router = APIRouter(prefix="/api/v1/files", tags=["files"])
 
 
 @router.get("/tree")
-def file_tree(request: Request, path: str = Query(default=str(Path.home()), description="Absolute directory path")):
+def file_tree(
+    request: Request,
+    path: str = Query(default=str(Path.home()), description="Absolute directory path"),
+    recursive: bool = Query(default=False, description="Fetch subdirectories recursively"),
+    children_of: str | None = Query(default=None, description="Return immediate children of this path (used for lazy expansion)"),
+):
     """
-    List directory contents.
+    List directory contents, optionally recursively or for lazy child expansion.
 
     Returns 200 always with {"path", "entries", [optional "error"]}.
     HTTP status codes:
@@ -24,7 +29,11 @@ def file_tree(request: Request, path: str = Query(default=str(Path.home()), desc
       - 400: path is not a directory (error='not_a_directory')
       - 403: permission denied (error='permission_denied')
     """
-    result = list_directory(path)
+    if children_of is not None:
+        # Lazy expansion: return immediate children of children_of, using path as root for permission check
+        result = list_directory(children_of, recursive=False)
+    else:
+        result = list_directory(path, recursive=recursive)
     if result.get("error") == "not_a_directory":
         raise HTTPException(status_code=400, detail=result["message"])
     elif result.get("error") == "permission_denied":

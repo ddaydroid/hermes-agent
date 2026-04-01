@@ -3,6 +3,7 @@ import { FolderOpen, Folder, File, FileText, ChevronRight, ChevronDown, Loader2,
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
 import { useFileTree, useFileRead, useGitInfo, useBookmarks } from "~/hooks/useQueries";
+import { getFileTree } from "~/api/client";
 import { cn, formatBytes, formatTimestamp } from "~/lib/utils";
 import type { FileEntry } from "~/api/types";
 
@@ -203,7 +204,7 @@ export default function Files() {
     if (treeResult) {
       setAllEntries((prev) => {
         const next = new Map(prev);
-        treeResult.entries.forEach((e) => next.set(e.path, e));
+        treeResult.entries.forEach((e: FileEntry) => next.set(e.path, e));
         return next;
       });
     }
@@ -215,12 +216,15 @@ export default function Files() {
   }, [allEntries, effectiveRoot]);
 
   const toggleDir = (path: string) => {
+    const isExpanding = !expandedDirs.has(path);
     setExpandedDirs((prev) => {
       const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
+      if (isExpanding) {
         next.add(path);
+        // Fetch children lazily on first expand
+        if (isExpanding) fetchChildren(path);
+      } else {
+        next.delete(path);
       }
       return next;
     });
@@ -229,6 +233,21 @@ export default function Files() {
   const navigateTo = (path: string) => {
     setCurrentPath(path);
     setSelectedFile(null);
+  };
+
+  // Fetch children of a directory on expand (lazy load)
+  const fetchChildren = async (dirPath: string) => {
+    if (allEntries.has(dirPath + "/.")) return; // already fetched (heuristic)
+    try {
+      const result = await getFileTree(effectiveRoot, false, dirPath);
+      setAllEntries((prev) => {
+        const next = new Map(prev);
+        result.entries.forEach((e) => next.set(e.path, e));
+        return next;
+      });
+    } catch {
+      // ignore fetch errors on expand
+    }
   };
 
   const pathParts = currentPath.split("/").filter(Boolean);
