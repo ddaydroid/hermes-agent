@@ -186,7 +186,7 @@ function FileViewer({ path }: { path: string }) {
 }
 
 export default function Files() {
-  const [currentPath, setCurrentPath] = useState("/");
+  const [currentPath, setCurrentPath] = useState("");
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [expandedDirs, setExpandedDirs] = useState<Set<string>>(new Set());
   const [allEntries, setAllEntries] = useState<Map<string, FileEntry>>(new Map());
@@ -244,7 +244,7 @@ export default function Files() {
         {/* Breadcrumb */}
         <div className="flex items-center gap-1 px-3 py-2 text-xs text-[hsl(215,20%,65%)] border-b border-[hsl(216,34%,17%)] overflow-x-auto whitespace-nowrap">
           <button
-            onClick={() => navigateTo("/")}
+            onClick={() => navigateTo(rootPath)}
             className="hover:text-[hsl(213,31%,91%)] transition-colors"
           >
             {rootPath.split("/").pop() || "/"}
