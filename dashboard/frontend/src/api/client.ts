@@ -1,4 +1,4 @@
-import type { Session, Message, SessionEvent, SessionStats, FileEntry, GitInfo, AgentStatus, LiveAgents } from "./types";
+import type { Session, Message, SessionEvent, SessionStats, FileEntry, GitInfo, AgentStatus, LiveAgents, Bookmark } from "./types";
 
 const BASE = "/api/v1";
 
@@ -89,4 +89,9 @@ export async function getAgentsStatus() {
 
 export async function getLiveAgents() {
   return baseFetch<LiveAgents>("/agents/live");
+}
+
+// Bookmarks
+export async function getBookmarks() {
+  return baseFetch<{ bookmarks: Bookmark[] }>("/files/bookmarks");
 }

@@ -122,3 +122,8 @@ export interface ActiveToolCall {
   status: string;
   started_at: number;
 }
+
+export interface Bookmark {
+  name: string;
+  path: string;
+}

@@ -25,6 +25,8 @@ class Config:
     dir_cache_ttl: int
     dir_cache_max_entries: int
     file_read_max_bytes: int
+    allowed_file_paths: list[str]  # allowed path prefixes for read/write
+    bookmarks: list[dict]          # [{name, path}, ...] for quick nav
 
     def __init__(self, config_path: Optional[Path] = None):
         if config_path is None:
@@ -35,6 +37,7 @@ class Config:
     def _load(self, config_path: Path):
         defaults = {
             "hermes_home": str(DEFAULT_HERMES_HOME),
+            "dashboard_home": str(DEFAULT_DASHBOARD_HOME),
             "workspace_default": str(DEFAULT_WORKSPACE),
             "gateway_admin_port": DEFAULT_GATEWAY_ADMIN_PORT,
             "gateway_admin_host": "127.0.0.1",
@@ -44,6 +47,11 @@ class Config:
             "file_read_max_bytes": DEFAULT_FILE_READ_MAX_BYTES,
             "frontend_origins": ["http://localhost:5173"],
             "dashboard_log_level": "INFO",
+            # Allowed path prefixes for file browsing/editing (recursive).
+            # Each entry should be an absolute path. Default: user's home.
+            "allowed_file_paths": [str(Path.home())],
+            # Bookmark shortcuts: [{name: "My Project", path: "/home/user/project"}, ...]
+            "bookmarks": [],
         }
 
         data = dict(defaults)
@@ -54,6 +62,7 @@ class Config:
             data.update({k: v for k, v in user.items() if v is not None})
 
         self.hermes_home = Path(data["hermes_home"]).expanduser()
+        self.dashboard_home = Path(data["dashboard_home"]).expanduser()
         self.workspace_default = Path(data["workspace_default"]).expanduser()
         self.gateway_admin_host = data.get("gateway_admin_host", "127.0.0.1")
         self.gateway_admin_port = int(data["gateway_admin_port"])
@@ -63,9 +72,23 @@ class Config:
         self.file_read_max_bytes = int(data["file_read_max_bytes"])
         self.frontend_origins = data.get("frontend_origins", ["http://localhost:5173"])
         self.dashboard_log_level = data.get("dashboard_log_level", "INFO")
+        self.allowed_file_paths = [str(Path(p).resolve()) for p in data.get("allowed_file_paths", [])]
+        self.bookmarks = data.get("bookmarks", [])
 
     def allowed_file_roots(self) -> list[Path]:
-        return [self.hermes_home, self.workspace_default]
+        """Legacy: return list of Path objects. Deprecated — use is_path_allowed."""
+        return [Path(p) for p in self.allowed_file_paths]
+
+    def is_path_allowed(self, path: str) -> bool:
+        """Check if a path is within allowed_file_paths (recursive)."""
+        try:
+            resolved = Path(path).resolve()
+            for prefix in self.allowed_file_paths:
+                if resolved == Path(prefix) or resolved.is_relative_to(Path(prefix)):
+                    return True
+            return False
+        except (ValueError, OSError):
+            return False
 
     def gateway_admin_url(self) -> str:
         return f"http://{self.gateway_admin_host}:{self.gateway_admin_port}"

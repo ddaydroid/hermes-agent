@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from services.file_service import list_directory, read_file
 from services.git_service import get_git_info
+from config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -62,3 +63,12 @@ def file_git(request: Request, workspace: str | None = Query(default=None, descr
     """
     result = get_git_info(workspace or None)
     return JSONResponse(result)
+
+@router.get("/bookmarks")
+def file_bookmarks():
+    """Get configured bookmarks.
+
+    Returns 200 with {"bookmarks": [{"name": str, "path": str}, ...]}.
+    """
+    cfg = get_config()
+    return {"bookmarks": cfg.bookmarks}

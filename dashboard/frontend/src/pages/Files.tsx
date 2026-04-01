@@ -1,8 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import { FolderOpen, Folder, File, FileText, ChevronRight, ChevronDown, Loader2 } from "lucide-react";
+import { FolderOpen, Folder, File, FileText, ChevronRight, ChevronDown, Loader2, Bookmark } from "lucide-react";
 import hljs from "highlight.js";
 import "highlight.js/styles/github-dark.css";
-import { useFileTree, useFileRead, useGitInfo } from "~/hooks/useQueries";
+import { useFileTree, useFileRead, useGitInfo, useBookmarks } from "~/hooks/useQueries";
 import { cn, formatBytes, formatTimestamp } from "~/lib/utils";
 import type { FileEntry } from "~/api/types";
 
@@ -192,6 +192,7 @@ export default function Files() {
   const [allEntries, setAllEntries] = useState<Map<string, FileEntry>>(new Map());
 
   const { data: gitData } = useGitInfo();
+  const { data: bookmarksData } = useBookmarks();
   const rootPath = gitData?.workspace_path ?? "/";
 
   const effectiveRoot = currentPath === "/" ? rootPath : currentPath;
@@ -261,7 +262,37 @@ export default function Files() {
           ))}
         </div>
 
+
+        {/* Section heading */}
+        <div className="px-3 py-2 border-b border-[hsl(216,34%,17%)]">
+          <h2 className="text-sm font-semibold text-[hsl(213,31%,91%)]">Files</h2>
+        </div>
+
+        {/* Bookmarks */}
+        {bookmarksData?.bookmarks && bookmarksData.bookmarks.length > 0 && (
+          <div className="flex flex-wrap gap-1 px-3 py-1.5 border-b border-[hsl(216,34%,17%)]">
+            {bookmarksData.bookmarks.map((bm) => (
+              <button
+                key={bm.path}
+                onClick={() => {
+                  setCurrentPath(bm.path);
+                  setSelectedFile(null);
+                  setExpandedDirs(new Set());
+                }}
+                className="flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-[hsl(216,34%,17%)] text-[hsl(215,20%,65%)] hover:text-[hsl(213,31%,91%)] hover:bg-[hsl(217,91%,60%)] transition-colors"
+                title={bm.path}
+              >
+                <Bookmark className="w-3 h-3" />
+                {bm.name}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Tree */}
+        <div className="px-3 py-2 border-b border-[hsl(216,34%,17%)]">
+          <h2 className="text-xs font-semibold text-[hsl(215,20%,65%)] uppercase tracking-wider">Tree</h2>
+        </div>
         <div className="flex-1 overflow-auto py-1">
           {treeLoading ? (
             <div className="flex justify-center py-4">

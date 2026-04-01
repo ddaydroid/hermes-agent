@@ -7,6 +7,7 @@ import {
   getFileRead,
   getGitInfo,
   getAgentsStatus,
+  getBookmarks,
 } from "~/api/client";
 
 const POLL_INTERVAL = 3000;
@@ -72,5 +73,13 @@ export function useAgentsStatus() {
     queryFn: () => getAgentsStatus(),
     refetchInterval: POLL_INTERVAL,
     staleTime: STALE_TIME,
+  });
+}
+
+export function useBookmarks() {
+  return useQuery({
+    queryKey: ["files", "bookmarks"],
+    queryFn: () => getBookmarks(),
+    staleTime: Infinity,
   });
 }

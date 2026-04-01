@@ -1,0 +1,15 @@
+# Dashboard backend config
+# All paths outside allowed_file_paths are blocked from read/write access.
+
+allowed_file_paths:
+  - /home/d3t0x
+
+bookmarks:
+  - name: Home
+    path: /home/d3t0x
+  - name: hermes-agent
+    path: /home/d3t0x/.hermes/hermes-agent
+  - name: Dashboard
+    path: /home/d3t0x/.hermes/hermes-agent/dashboard
+  - name: Gateway
+    path: /home/d3t0x/.hermes/hermes-agent/gateway

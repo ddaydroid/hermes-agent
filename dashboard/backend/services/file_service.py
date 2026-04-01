@@ -44,16 +44,10 @@ LANG_MAP = {
 
 
 def _assert_within_root(path: Path) -> None:
-    """Verify resolved path is within allowed file roots. Raises PermissionError if not."""
+    """Verify path is within allowed_file_paths (recursive). Raises PermissionError if not."""
     cfg = get_config()
-    resolved = path.resolve()
-    for root in cfg.allowed_file_roots():
-        try:
-            resolved.relative_to(root.resolve())
-            return
-        except ValueError:
-            continue
-    raise PermissionError(f"Path {resolved} is outside allowed roots")
+    if not cfg.is_path_allowed(path):
+        raise PermissionError(f"Path {path} is outside allowed file paths: {cfg.allowed_file_paths}")
 
 
 def _error(error_code: str, message: str) -> dict:
