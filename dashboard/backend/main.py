@@ -6,7 +6,7 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import get_config
@@ -55,6 +55,9 @@ async def _global_exception_handler(request: Request, exc: Exception) -> JSONRes
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
 
+_dist = Path(__file__).parent.parent / "frontend" / "dist"
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     cfg = get_config()
@@ -65,13 +68,12 @@ async def lifespan(app: FastAPI):
         f"hermes_home={cfg.hermes_home}, "
         f"gateway_admin={cfg.gateway_admin_url()}"
     )
+    if not _dist.exists():
+        logger.warning("Frontend dist not found at %s — API only", _dist)
     yield
     from services.sqlite_reader import close_connection
     close_connection()
     logger.info("Hermes Dashboard shutting down")
-
-
-_dist = Path(__file__).parent.parent / "frontend" / "dist"
 
 
 app = FastAPI(
@@ -82,7 +84,7 @@ app = FastAPI(
 
 app.add_exception_handler(Exception, _global_exception_handler)
 
-# API routers first — these take /api/* before anything else
+# API routers — resolve before the SPA catch-all
 app.include_router(files.router)
 app.include_router(sessions.router)
 app.include_router(agents.router)
@@ -97,21 +99,26 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Health (no prefix)
 app.add_api_route("/api/v1/health", lambda: {"status": "ok", "platform": "hermes-dashboard", "version": "1.0.0"})
 
-# SPA catch-all — must be last so API routes resolve first
+
 @app.get("/{path:path}")
-async def spa_fallback(request: Request, path: str):
+async def serve_frontend(request: Request, path: str):
     """
-    Serve index.html for any non-API path so React Router can handle the route.
-    API paths are already handled by the routers above this catch-all.
+    Serve built frontend files if they exist; otherwise serve index.html
+    for SPA routing. API paths are handled by routers above.
     """
     if path.startswith("api/"):
         return JSONResponse(status_code=404, content={"detail": "Not Found"})
-    # Serve the index.html from the dist directory
+
+    # Try to serve the actual file from dist
+    file_path = _dist / path
+    if file_path.is_file():
+        return FileResponse(str(file_path))
+
+    # Fallback to index.html for SPA routes (React Router)
     index = _dist / "index.html"
     if index.exists():
-        from fastapi.responses import FileResponse
         return FileResponse(str(index))
-    return JSONResponse(status_code=404, content={"detail": "Dashboard frontend not found"})
+
+    return JSONResponse(status_code=404, content={"detail": "Not Found"})

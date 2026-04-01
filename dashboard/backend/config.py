@@ -19,6 +19,7 @@ class Config:
     hermes_home: Path
     dashboard_home: Path
     workspace_default: Path
+    gateway_admin_host: str
     gateway_admin_port: int
     dashboard_port: int
     dir_cache_ttl: int
@@ -36,6 +37,7 @@ class Config:
             "hermes_home": str(DEFAULT_HERMES_HOME),
             "workspace_default": str(DEFAULT_WORKSPACE),
             "gateway_admin_port": DEFAULT_GATEWAY_ADMIN_PORT,
+            "gateway_admin_host": "127.0.0.1",
             "dashboard_port": DEFAULT_DASHBOARD_PORT,
             "dir_cache_ttl": DEFAULT_DIR_CACHE_TTL,
             "dir_cache_max_entries": DEFAULT_DIR_CACHE_MAX_ENTRIES,
@@ -53,6 +55,7 @@ class Config:
 
         self.hermes_home = Path(data["hermes_home"]).expanduser()
         self.workspace_default = Path(data["workspace_default"]).expanduser()
+        self.gateway_admin_host = data.get("gateway_admin_host", "127.0.0.1")
         self.gateway_admin_port = int(data["gateway_admin_port"])
         self.dashboard_port = int(data["dashboard_port"])
         self.dir_cache_ttl = int(data["dir_cache_ttl"])
@@ -65,7 +68,7 @@ class Config:
         return [self.hermes_home, self.workspace_default]
 
     def gateway_admin_url(self) -> str:
-        return f"http://localhost:{self.gateway_admin_port}"
+        return f"http://{self.gateway_admin_host}:{self.gateway_admin_port}"
 
 
 # Global config instance — imported by other modules

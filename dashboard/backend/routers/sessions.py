@@ -13,6 +13,8 @@ from services.sqlite_reader import (
     DBDatabaseBusy,
 )
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/sessions", tags=["sessions"])
 
 

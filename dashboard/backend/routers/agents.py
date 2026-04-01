@@ -4,6 +4,8 @@ from fastapi.responses import JSONResponse
 
 from services.gateway_proxy import get_live_agents, GatewayUnavailable
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/agents", tags=["agents"])
 
 

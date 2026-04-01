@@ -7,6 +7,8 @@ from fastapi.responses import JSONResponse
 from services.file_service import list_directory, read_file
 from services.git_service import get_git_info
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/v1/files", tags=["files"])
 
 
